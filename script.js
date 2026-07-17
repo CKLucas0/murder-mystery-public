@@ -209,6 +209,19 @@ async function refreshPlayerPlayerList() {
 
 /* ---------------------- REALTIME ---------------------- */
 
+function subscribeToPlayers(isJoiner) {
+  supabaseclient
+    .channel("players-" + lobbyCode)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "players", filter: `lobby_code=eq.${lobbyCode}` },
+      () => {
+        if (isHost) refreshHostPlayerList();
+        if (isJoiner) refreshPlayerPlayerList();
+      }
+    )
+    .subscribe();
+}
+
 let roleCheckInterval = null;
 
 function subscribeToOwnRole() {
