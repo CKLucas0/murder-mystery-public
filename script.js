@@ -225,7 +225,7 @@ function subscribeToPlayers(isJoiner) {
 let roleCheckInterval = null;
 
 function subscribeToOwnRole() {
-  supabaseClient
+  supabaseclient
     .channel("role-" + myPlayerId)
     .on("postgres_changes",
       { event: "UPDATE", schema: "public", table: "players", filter: `id=eq.${myPlayerId}` },
@@ -237,7 +237,7 @@ function subscribeToOwnRole() {
 
   roleCheckInterval = setInterval(async () => {
     if (myRole) { clearInterval(roleCheckInterval); return; }
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabaseclient
       .from("players")
       .select("role")
       .eq("id", myPlayerId)
@@ -277,11 +277,11 @@ function revealRole() {
 
 function cleanupOnUnload() {
   if (myPlayerId) {
-    fetch(`${SUPABASE_URL}/rest/v1/players?id=eq.${myPlayerId}`, {
+    fetch(`${supabaseclient_URL}/rest/v1/players?id=eq.${myPlayerId}`, {
       method: "DELETE",
       headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+        apikey: supabaseclient_ANON_KEY,
+        Authorization: `Bearer ${supabaseclient_ANON_KEY}`
       },
       keepalive: true
     });
@@ -295,10 +295,12 @@ let heartbeatInterval = null;
 function startHeartbeat() {
   heartbeatInterval = setInterval(() => {
     if (myPlayerId) {
-      supabaseClient
+      supabaseclient
         .from("players")
         .update({ last_seen: new Date().toISOString() })
         .eq("id", myPlayerId);
     }
   }, 3000);
 }
+myPlayerId = playerRow.id;
+startHeartbeat();
