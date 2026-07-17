@@ -295,12 +295,14 @@ window.addEventListener("beforeunload", cleanupOnUnload);
 let heartbeatInterval = null;
 
 function startHeartbeat() {
-  heartbeatInterval = setInterval(() => {
+  heartbeatInterval = setInterval(async () => {
     if (myPlayerId) {
-      supabaseclient
+      const { error } = await supabaseclient
         .from("players")
         .update({ last_seen: new Date().toISOString() })
         .eq("id", myPlayerId);
+      if (error) console.error("Heartbeat fout:", error);
+      else console.log("Heartbeat verstuurd om", new Date().toLocaleTimeString());
     }
   }, 3000);
 }
