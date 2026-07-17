@@ -75,6 +75,7 @@ async function createLobby() {
   }
 
   myPlayerId = playerRow.id;
+  startHeartbeat();
 
   document.getElementById("lobbyCodeDisplay").textContent = lobbyCode;
   updateHostRequirement();
@@ -181,6 +182,7 @@ async function joinLobby() {
 
   lobbyCode = code;
   myPlayerId = playerRow.id;
+  startHeartbeat();
   isHost = false;
 
   showScreen("player-view");
@@ -302,5 +304,3 @@ function startHeartbeat() {
     }
   }, 3000);
 }
-myPlayerId = playerRow.id;
-startHeartbeat();
