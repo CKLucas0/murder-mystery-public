@@ -209,34 +209,38 @@ async function refreshPlayerPlayerList() {
 
 /* ---------------------- REALTIME ---------------------- */
 
-function subscribeToPlayers(isJoiner) {
-  supabaseclient
-    .channel("players-" + lobbyCode)
-    .on("postgres_changes",
-      { event: "*", schema: "public", table: "players", filter: `lobby_code=eq.${lobbyCode}` },
-      () => {
-        if (isHost) refreshHostPlayerList();
-        if (isJoiner) refreshPlayerPlayerList();
-      }
-    )
-    .subscribe();
-}
+let roleCheckInterval = null;
 
 function subscribeToOwnRole() {
-  supabaseclient
+  supabaseClient
     .channel("role-" + myPlayerId)
     .on("postgres_changes",
       { event: "UPDATE", schema: "public", table: "players", filter: `id=eq.${myPlayerId}` },
       (payload) => {
-        if (payload.new.role) {
-          myRole = payload.new.role;
-          document.getElementById("waitingNote").classList.add("hidden");
-          document.getElementById("playerPlayerList").classList.add("hidden");
-          document.getElementById("roleBox").classList.remove("hidden");
-        }
+        if (payload.new.role) applyRole(payload.new.role);
       }
     )
     .subscribe();
+
+  roleCheckInterval = setInterval(async () => {
+    if (myRole) { clearInterval(roleCheckInterval); return; }
+    const { data, error } = await supabaseClient
+      .from("players")
+      .select("role")
+      .eq("id", myPlayerId)
+      .single();
+    if (!error && data && data.role) {
+      applyRole(data.role);
+      clearInterval(roleCheckInterval);
+    }
+  }, 4000);
+}
+
+function applyRole(role) {
+  myRole = role;
+  document.getElementById("waitingNote").classList.add("hidden");
+  document.getElementById("playerPlayerList").classList.add("hidden");
+  document.getElementById("roleBox").classList.remove("hidden");
 }
 
 function revealRole() {
@@ -283,5 +287,5 @@ function startHeartbeat() {
         .update({ last_seen: new Date().toISOString() })
         .eq("id", myPlayerId);
     }
-  }, 8000);
+  }, 3000);
 }
