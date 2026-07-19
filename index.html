@@ -54,13 +54,14 @@
   <ul class="player-list" id="playerPlayerList"></ul>
   <div class="role-display hidden" id="roleBox">
     <div id="roleHiddenState">
-      <button onclick="revealRole()">Tik om je rol te zien</button>
+    <button onclick="revealRole()">Tik om je rol te zien</button>
     </div>
     <div id="roleShownState" class="hidden" onclick="revealRole()" style="cursor:pointer;">
-      <span id="roleText"></span>
-      <p class="tap-hint">(tik om te verbergen)</p>
+    <span id="roleText"></span>
+    <p class="tap-hint">(tik om te verbergen)</p>
     </div>
   </div>
+  <button class="secondary hidden" id="hostDeleteBtn" onclick="deleteLobby()">Lobby verwijderen</button>
 </div>
 
 

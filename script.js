@@ -148,6 +148,7 @@ async function startRound() {
   showScreen("player-view");
   document.getElementById("waitingNote").classList.add("hidden");
   document.getElementById("roleBox").classList.remove("hidden");
+  if (isHost) document.getElementById("hostDeleteBtn").classList.remove("hidden");
   subscribeToOwnRole();
 }
 
