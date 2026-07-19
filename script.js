@@ -16,7 +16,7 @@ function showScreen(id) {
 }
 
 function generateCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   let code = "";
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
@@ -148,7 +148,10 @@ async function startRound() {
   showScreen("player-view");
   document.getElementById("waitingNote").classList.add("hidden");
   document.getElementById("roleBox").classList.remove("hidden");
-  if (isHost) document.getElementById("hostDeleteBtn").classList.remove("hidden");
+  if (isHost) {
+    document.getElementById("hostDeleteBtn").classList.remove("hidden");
+    document.getElementById("backToLobbyBtn").classList.remove("hidden");
+  }
   subscribeToOwnRole();
 }
 
@@ -232,11 +235,20 @@ function subscribeToOwnRole() {
     .on("postgres_changes",
       { event: "UPDATE", schema: "public", table: "players", filter: `id=eq.${myPlayerId}` },
       (payload) => {
-        if (payload.new.role) applyRole(payload.new.role);
+        if (payload.new.role) {
+          applyRole(payload.new.role);
+        } else {
+          backToWaitingRoom();
+        }
       }
     )
     .subscribe();
 
+  startRolePolling();
+}
+
+function startRolePolling() {
+  if (roleCheckInterval) clearInterval(roleCheckInterval);
   roleCheckInterval = setInterval(async () => {
     if (myRole) { clearInterval(roleCheckInterval); return; }
     const { data, error } = await supabaseclient
@@ -249,6 +261,18 @@ function subscribeToOwnRole() {
       clearInterval(roleCheckInterval);
     }
   }, 4000);
+}
+
+function backToWaitingRoom() {
+  myRole = null;
+  roleRevealed = false;
+  document.getElementById("roleBox").classList.add("hidden");
+  document.getElementById("roleHiddenState").classList.remove("hidden");
+  document.getElementById("roleShownState").classList.add("hidden");
+  document.getElementById("waitingNote").classList.remove("hidden");
+  document.getElementById("playerPlayerList").classList.remove("hidden");
+  refreshPlayerPlayerList();
+  startRolePolling();
 }
 
 function applyRole(role) {
@@ -318,4 +342,30 @@ function subscribeToLobbyDeletion() {
       }
     )
     .subscribe();
+}
+
+async function backToLobby() {
+  if (!isHost || !lobbyCode) return;
+
+  const { error: err1 } = await supabaseclient
+    .from("players")
+    .update({ role: null })
+    .eq("lobby_code", lobbyCode);
+  if (err1) { document.getElementById("hostError").textContent = "Kon rollen niet resetten: " + err1.message; return; }
+
+  const { error: err2 } = await supabaseclient
+    .from("lobbies")
+    .update({ started: false })
+    .eq("code", lobbyCode);
+  if (err2) { document.getElementById("hostError").textContent = "Kon lobby niet resetten: " + err2.message; return; }
+
+  myRole = null;
+  roleRevealed = false;
+  document.getElementById("hostDeleteBtn").classList.add("hidden");
+  document.getElementById("backToLobbyBtn").classList.add("hidden");
+  document.getElementById("roleBox").classList.add("hidden");
+  document.getElementById("roleHiddenState").classList.remove("hidden");
+  document.getElementById("roleShownState").classList.add("hidden");
+  showScreen("host-lobby");
+  refreshHostPlayerList();
 }
