@@ -35,6 +35,7 @@
   <p class="note" id="hostRequirement"></p>
   <ul class="player-list" id="hostPlayerList"></ul>
   <button id="startRoundBtn" onclick="startRound()" disabled>Start ronde</button>
+  <button class="secondary" onclick="deleteLobby()">Lobby verwijderen</button>
   <p class="error" id="hostError"></p>
 </div>
 
@@ -55,12 +56,14 @@
     <div id="roleHiddenState">
       <button onclick="revealRole()">Tik om je rol te zien</button>
     </div>
-    <div id="roleShownState" class="hidden">
+    <div id="roleShownState" class="hidden" onclick="revealRole()" style="cursor:pointer;">
       <span id="roleText"></span>
       <p class="tap-hint">(tik om te verbergen)</p>
     </div>
   </div>
 </div>
+
+
 
 <script src="script.js"></script>
 </body>

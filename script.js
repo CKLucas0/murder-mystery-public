@@ -75,7 +75,6 @@ async function createLobby() {
   }
 
   myPlayerId = playerRow.id;
-  startHeartbeat();
 
   document.getElementById("lobbyCodeDisplay").textContent = lobbyCode;
   updateHostRequirement();
@@ -182,12 +181,12 @@ async function joinLobby() {
 
   lobbyCode = code;
   myPlayerId = playerRow.id;
-  startHeartbeat();
   isHost = false;
 
   showScreen("player-view");
   subscribeToPlayers(true);
   subscribeToOwnRole();
+  subscribeToLobbyDeletion();
   refreshPlayerPlayerList();
 }
 
@@ -292,17 +291,30 @@ function cleanupOnUnload() {
 
 window.addEventListener("pagehide", cleanupOnUnload);
 window.addEventListener("beforeunload", cleanupOnUnload);
-let heartbeatInterval = null;
 
-function startHeartbeat() {
-  heartbeatInterval = setInterval(async () => {
-    if (myPlayerId) {
-      const { error } = await supabaseclient
-        .from("players")
-        .update({ last_seen: new Date().toISOString() })
-        .eq("id", myPlayerId);
-      if (error) console.error("Heartbeat fout:", error);
-      else console.log("Heartbeat verstuurd om", new Date().toLocaleTimeString());
-    }
-  }, 3000);
+async function deleteLobby() {
+  if (!isHost || !lobbyCode) return;
+  const { error } = await supabaseclient.from("lobbies").delete().eq("code", lobbyCode);
+  if (error) {
+    document.getElementById("hostError").textContent = "Kon lobby niet verwijderen: " + error.message;
+    return;
+  }
+  lobbyCode = null;
+  myPlayerId = null;
+  isHost = false;
+  showScreen("home");
+}
+function subscribeToLobbyDeletion() {
+  supabaseclient
+    .channel("lobby-" + lobbyCode)
+    .on("postgres_changes",
+      { event: "DELETE", schema: "public", table: "lobbies", filter: `code=eq.${lobbyCode}` },
+      () => {
+        alert("De host heeft de lobby beëindigd.");
+        lobbyCode = null;
+        myPlayerId = null;
+        showScreen("home");
+      }
+    )
+    .subscribe();
 }
